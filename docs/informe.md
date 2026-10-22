@@ -50,6 +50,8 @@ El sistema sigue una arquitectura desacoplada de microservicios:
 2.  **Backend (FastAPI):** Contiene las reglas de negocio (alertas, validaciones) y seguridad (API Key).
 3.  **Microservicio IA (FastAPI + Scikit-learn):** Encargado exclusivo de la inferencia del modelo.
 
+
+```
 graph TD
     A[Usuario/Operador] -->|Ingresa datos| B(Frontend Web)
     B -->|POST /api/turno| C{Backend API}
@@ -58,3 +60,10 @@ graph TD
     E -->|Carga model.pkl| F((Random Forest))
     E -->|Retorna Predicción| D
     D -->|Genera Turno y Alerta| B
+
+
+```
+
+sd
+
+
