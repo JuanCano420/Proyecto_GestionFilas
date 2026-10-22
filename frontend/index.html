@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Filas - Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+        input, select, button { width: 100%; padding: 8px; margin: 5px 0 15px 0; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; background: #f8f9fa; border: 1px solid #ddd; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h2>Simulador de Turnos</h2>
+    <label>Urgencia (1=Baja, 4=Crítica):</label>
+    <input type="number" id="urgency" min="1" max="4" value="2">
+    
+    <label>Ratio Enfermera/Paciente:</label>
+    <input type="number" id="nurse_ratio" step="0.1" value="3.5">
+    
+    <label>Especialistas Disponibles:</label>
+    <input type="number" id="specialists" value="5">
+    
+    <label>Camas Disponibles:</label>
+    <input type="number" id="beds" value="100">
+    
+    <button onclick="predecir()">Estimar Tiempo de Espera</button>
+    
+    <div id="resultado" class="result" style="display:none;"></div>
+
+    <script>
+        async function predecir() {
+            const resDiv = document.getElementById('resultado');
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = "Calculando...";
+
+            const data = {
+                urgency: parseInt(document.getElementById('urgency').value),
+                nurse_ratio: parseFloat(document.getElementById('nurse_ratio').value),
+                specialists: parseInt(document.getElementById('specialists').value),
+                beds: parseInt(document.getElementById('beds').value)
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/turno', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'mi_clave_secreta_123'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const result = await response.json();
+                resDiv.innerHTML = `
+                    <strong>Turno:</strong> ${result.turno}<br>
+                    <strong>Espera estimada:</strong> ${result.tiempo_estimado_min} min<br>
+                    <strong>Alerta:</strong> <span style="color:${result.alerta === 'Alta espera' ? 'red' : 'green'}">${result.alerta}</span><br>
+                    <small>Modelo: ${result.modelo}</small>
+                `;
+            } catch (error) {
+                resDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

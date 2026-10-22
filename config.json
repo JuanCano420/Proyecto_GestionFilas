@@ -1,0 +1,12 @@
+{
+  "project_name": "Sistema Inteligente de Gestión de Filas",
+  "version": "1.0.0",
+  "ia_service": {
+    "host": "127.0.0.1",
+    "port": 8001
+  },
+  "backend": {
+    "host": "127.0.0.1",
+    "port": 8000
+  }
+}

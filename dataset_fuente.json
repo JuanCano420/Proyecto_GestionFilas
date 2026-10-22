@@ -1,0 +1,13 @@
+{
+  "fuente": "Kaggle - Hospital Wait Time Data",
+  "autor": "bharathreddybollu",
+  "url": "https://www.kaggle.com/datasets/bharathreddybollu/hospital-wait-time-data",
+  "variables_entrada": [
+    "Urgency Level",
+    "Nurse-to-Patient Ratio",
+    "Specialist Availability",
+    "Facility Size (Beds)"
+  ],
+  "variable_objetivo": "Total Wait Time (min)",
+  "registros_aproximados": 5000
+}
