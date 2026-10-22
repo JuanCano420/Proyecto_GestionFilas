@@ -3,13 +3,13 @@
 Proyecto de Ingeniería de Software con IA integrada (Colección III).
 
 ## Arquitectura
-- **Frontend:** HTML/JS (demo)
+- **Frontend:** HTML/JS
 - **Backend:** FastAPI (Puerto 8000)
 - **Microservicio IA:** FastAPI + Scikit-learn (Puerto 8001)
 - **Dataset:** Hospital Wait Time Data (Kaggle)
 
 ## Requisitos
-- Python 3.10+
+- Python 3.12.XX
 - Docker (opcional)
 
 ## Instalación local
