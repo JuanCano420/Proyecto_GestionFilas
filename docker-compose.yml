@@ -22,4 +22,8 @@ services:
     environment:
       - IA_SERVICE_URL=http://ai_service:8001/predict
       - API_KEY=mi_clave_secreta_123
+    volumes:
+      - ./data:/app/data
+      - ./frontend:/app/frontend
+      - ./dataset_fuente.json:/app/dataset_fuente.json
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000

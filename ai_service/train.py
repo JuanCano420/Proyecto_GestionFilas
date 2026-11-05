@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import joblib
 import os
@@ -56,7 +57,20 @@ preds = model.predict(X_test)
 mae = mean_absolute_error(y_test, preds)
 print(f"Random Forest MAE: {mae:.2f} min")
 
-# 6. Guardar modelo
+# 6. Guardar modelo y métricas para el panel de administración
 os.makedirs('ai_service', exist_ok=True)
 joblib.dump(model, 'ai_service/model.pkl')
+
+metrics = {
+    "baseline_mae": round(float(baseline_mae), 2),
+    "random_forest_mae": round(float(mae), 2),
+    "model_version": "v1.0-random-forest",
+    "features": features,
+    "n_samples": int(len(df)),
+    "csv_usado": csv_path,
+}
+with open(os.path.join('ai_service', 'metrics.json'), 'w', encoding='utf-8') as fh:
+    json.dump(metrics, fh, indent=2)
+
 print("Modelo guardado exitosamente en ai_service/model.pkl")
+print("Métricas guardadas en ai_service/metrics.json")

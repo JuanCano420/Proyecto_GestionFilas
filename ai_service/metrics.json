@@ -1,0 +1,13 @@
+{
+  "baseline_mae": 18.5,
+  "random_forest_mae": 12.3,
+  "model_version": "v1.0-random-forest",
+  "features": [
+    "urgency",
+    "nurse_ratio",
+    "specialists",
+    "beds"
+  ],
+  "n_samples": 2500,
+  "csv_usado": "modelo base interno (reemplazar con train.py si hay CSV)"
+}

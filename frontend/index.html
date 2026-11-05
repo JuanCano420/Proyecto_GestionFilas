@@ -2,72 +2,498 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Filas - Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica — Gestión de Citas y Filas</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
-        input, select, button { width: 100%; padding: 8px; margin: 5px 0 15px 0; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .result { margin-top: 20px; padding: 15px; border-radius: 5px; background: #f8f9fa; border: 1px solid #ddd; }
-        .error { color: red; }
+        :root {
+            --bg: #f3f6f4;
+            --card: #ffffff;
+            --ink: #17302a;
+            --muted: #5b6f69;
+            --line: #d7e3dd;
+            --teal: #0f6e56;
+            --teal-dark: #0b5341;
+            --gold: #c97800;
+            --red: #b42318;
+            --ok: #067647;
+            --chip: #eaf6f1;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+        }
+        header {
+            background: linear-gradient(120deg, #0b5341, #1a7a63);
+            color: white;
+            padding: 22px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        header p { margin: 4px 0 0; opacity: .9; font-size: .9rem; }
+        nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        button, .btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { background: var(--teal); color: white; }
+        .btn-primary:hover { background: var(--teal-dark); }
+        .btn-ghost { background: transparent; color: inherit; border: 1px solid currentColor; }
+        .btn-danger { background: #fde8e6; color: var(--red); }
+        main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+        }
+        label { display: block; font-size: .85rem; margin: 10px 0 6px; color: var(--muted); }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            font: inherit;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+        th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        .kpi { font-size: 1.7rem; margin: 0; }
+        .muted { color: var(--muted); }
+        .alert-alta { color: var(--red); font-weight: 700; }
+        .alert-ok { color: var(--ok); font-weight: 700; }
+        .chip {
+            display: inline-block;
+            background: var(--chip);
+            color: var(--teal-dark);
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: .78rem;
+        }
+        .hidden { display: none !important; }
+        .msg { margin-top: 12px; padding: 10px; border-radius: 8px; background: #eef4f1; }
+        .msg.error { background: #fde8e6; color: var(--red); }
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tabs button[aria-selected="true"] { background: var(--teal); color: white; }
+        .tabs button { background: #e3eee9; color: var(--ink); }
+        .userbar { font-size: .9rem; }
+        @media (max-width: 700px) {
+            header { flex-direction: column; align-items: flex-start; }
+            table { font-size: .8rem; }
+        }
     </style>
 </head>
 <body>
-    <h2>Simulador de Turnos</h2>
-    <label>Urgencia (1=Baja, 4=Crítica):</label>
-    <input type="number" id="urgency" min="1" max="4" value="2">
-    
-    <label>Ratio Enfermera/Paciente:</label>
-    <input type="number" id="nurse_ratio" step="0.1" value="3.5">
-    
-    <label>Especialistas Disponibles:</label>
-    <input type="number" id="specialists" value="5">
-    
-    <label>Camas Disponibles:</label>
-    <input type="number" id="beds" value="100">
-    
-    <button onclick="predecir()">Estimar Tiempo de Espera</button>
-    
-    <div id="resultado" class="result" style="display:none;"></div>
+    <header>
+        <div>
+            <h1>Sistema inteligente de citas y tiempos de espera</h1>
+            <p>Pacientes agendan. Administradores verifican datos, IA y dataset.</p>
+        </div>
+        <div id="sessionBar" class="userbar hidden">
+            <span id="sessionLabel"></span>
+            <button class="btn-ghost" id="logoutBtn" style="margin-left:8px;color:white;border-color:rgba(255,255,255,.5)">Salir</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="landing">
+            <div class="grid">
+                <article class="card">
+                    <span class="chip">Portal de pacientes</span>
+                    <h2>Agendar cita</h2>
+                    <p class="muted">Regístrate, elige fecha y urgencia. El sistema estima la espera con el modelo de IA y te entrega un turno.</p>
+                    <button class="btn-primary" data-go="paciente-auth">Entrar como paciente</button>
+                </article>
+                <article class="card">
+                    <span class="chip">Portal administrativo</span>
+                    <h2>Verificar operación e IA</h2>
+                    <p class="muted">Consulta citas, capacidad, tiempos predichos y el dataset de entrenamiento usado para identificar esperas.</p>
+                    <button class="btn-primary" data-go="admin-auth">Entrar como administrador</button>
+                </article>
+            </div>
+            <p class="muted" style="margin-top:18px">Cuentas de demostración: <code>paciente@clinica.local / paciente123</code> y <code>admin@clinica.local / admin123</code></p>
+        </section>
+
+        <section id="paciente-auth" class="hidden">
+            <button class="btn-ghost" data-go="landing">← Volver</button>
+            <div class="grid" style="margin-top:16px">
+                <form class="card" id="loginPaciente">
+                    <h2>Iniciar sesión</h2>
+                    <label>Correo</label>
+                    <input name="email" type="email" value="paciente@clinica.local" required>
+                    <label>Contraseña</label>
+                    <input name="password" type="password" value="paciente123" required>
+                    <button class="btn-primary" type="submit">Entrar</button>
+                    <div class="msg hidden"></div>
+                </form>
+                <form class="card" id="registerPaciente">
+                    <h2>Crear cuenta</h2>
+                    <label>Nombre</label>
+                    <input name="nombre" required>
+                    <label>Correo</label>
+                    <input name="email" type="email" required>
+                    <label>Teléfono</label>
+                    <input name="telefono">
+                    <label>Contraseña</label>
+                    <input name="password" type="password" minlength="6" required>
+                    <button class="btn-primary" type="submit">Registrarme</button>
+                    <div class="msg hidden"></div>
+                </form>
+            </div>
+        </section>
+
+        <section id="admin-auth" class="hidden">
+            <button class="btn-ghost" data-go="landing">← Volver</button>
+            <form class="card" id="loginAdmin" style="max-width:420px;margin-top:16px">
+                <h2>Acceso administrador</h2>
+                <label>Correo</label>
+                <input name="email" type="email" value="admin@clinica.local" required>
+                <label>Contraseña</label>
+                <input name="password" type="password" value="admin123" required>
+                <button class="btn-primary" type="submit">Entrar</button>
+                <div class="msg hidden"></div>
+            </form>
+        </section>
+
+        <section id="paciente-app" class="hidden">
+            <div class="grid">
+                <form class="card" id="formCita">
+                    <h2>Nueva cita</h2>
+                    <label>Fecha</label>
+                    <input name="fecha" type="date" required>
+                    <label>Hora disponible</label>
+                    <select name="hora" required></select>
+                    <label>Motivo de la consulta</label>
+                    <select name="motivo" id="selectMotivo" required>
+                        <option value="" disabled selected>Selecciona un motivo</option>
+                    </select>
+                    <p class="muted" id="urgenciaAsignada">La urgencia se asigna automáticamente según el motivo.</p>
+                    <button class="btn-primary" type="submit">Agendar y estimar espera</button>
+                    <div class="msg hidden"></div>
+                </form>
+                <article class="card">
+                    <h2>Mis citas</h2>
+                    <div id="misCitas"></div>
+                </article>
+            </div>
+        </section>
+
+        <section id="admin-app" class="hidden">
+            <div class="tabs">
+                <button data-tab="resumen" aria-selected="true">Resumen</button>
+                <button data-tab="citas">Citas</button>
+                <button data-tab="operacion">Capacidad</button>
+                <button data-tab="dataset">Dataset e IA</button>
+            </div>
+            <div id="tab-resumen" class="tab-panel">
+                <div class="grid" id="kpis"></div>
+            </div>
+            <div id="tab-citas" class="tab-panel hidden">
+                <article class="card">
+                    <h2>Todas las citas</h2>
+                    <div id="adminCitas"></div>
+                </article>
+            </div>
+            <div id="tab-operacion" class="tab-panel hidden">
+                <form class="card" id="formConfig" style="max-width:480px">
+                    <h2>Datos operativos actuales</h2>
+                    <label>Ratio enfermera / paciente</label>
+                    <input name="nurse_ratio" type="number" step="0.1" required>
+                    <label>Especialistas disponibles</label>
+                    <input name="specialists" type="number" required>
+                    <label>Camas / capacidad</label>
+                    <input name="beds" type="number" required>
+                    <label>Umbral de alerta (minutos)</label>
+                    <input name="umbral_alerta_min" type="number" required>
+                    <p class="muted">Estos valores se envían a la IA en cada cita nueva. El cupo por horario usa el número de especialistas.</p>
+                    <button class="btn-primary" type="submit">Guardar capacidad</button>
+                    <div class="msg hidden"></div>
+                </form>
+            </div>
+            <div id="tab-dataset" class="tab-panel hidden">
+                <div class="grid">
+                    <article class="card" id="datasetCard"></article>
+                    <article class="card" id="comparacionCard"></article>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <script>
-        async function predecir() {
-            const resDiv = document.getElementById('resultado');
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = "Calculando...";
+        const API = location.port === "8000" ? "" : "http://127.0.0.1:8000";
+        const state = { token: localStorage.getItem("token"), user: null };
 
-            const data = {
-                urgency: parseInt(document.getElementById('urgency').value),
-                nurse_ratio: parseFloat(document.getElementById('nurse_ratio').value),
-                specialists: parseInt(document.getElementById('specialists').value),
-                beds: parseInt(document.getElementById('beds').value)
-            };
+        const $ = (id) => document.getElementById(id);
+        const show = (id) => {
+            ["landing", "paciente-auth", "admin-auth", "paciente-app", "admin-app"].forEach((s) => {
+                $(s).classList.toggle("hidden", s !== id);
+            });
+        };
+        const showMsg = (form, text, error = false) => {
+            const box = form.querySelector(".msg");
+            box.classList.remove("hidden");
+            box.classList.toggle("error", error);
+            box.textContent = text;
+        };
 
-            try {
-                const response = await fetch('http://127.0.0.1:8000/api/turno', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': 'mi_clave_secreta_123'
-                    },
-                    body: JSON.stringify(data)
-                });
+        async function api(path, options = {}) {
+            const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+            if (state.token) headers.Authorization = `Bearer ${state.token}`;
+            const res = await fetch(`${API}${path}`, { ...options, headers });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
+            return data;
+        }
 
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-
-                const result = await response.json();
-                resDiv.innerHTML = `
-                    <strong>Turno:</strong> ${result.turno}<br>
-                    <strong>Espera estimada:</strong> ${result.tiempo_estimado_min} min<br>
-                    <strong>Alerta:</strong> <span style="color:${result.alerta === 'Alta espera' ? 'red' : 'green'}">${result.alerta}</span><br>
-                    <small>Modelo: ${result.modelo}</small>
-                `;
-            } catch (error) {
-                resDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+        function setSession(payload) {
+            state.token = payload.token;
+            state.user = payload.user;
+            localStorage.setItem("token", payload.token);
+            $("sessionBar").classList.remove("hidden");
+            $("sessionLabel").textContent = `${payload.user.nombre} · ${payload.user.rol}`;
+            if (payload.user.rol === "admin") {
+                show("admin-app");
+                loadAdmin();
+            } else {
+                show("paciente-app");
+                loadPaciente();
             }
         }
+
+        function logout() {
+            state.token = null;
+            state.user = null;
+            localStorage.removeItem("token");
+            $("sessionBar").classList.add("hidden");
+            show("landing");
+        }
+
+        document.querySelectorAll("[data-go]").forEach((btn) => {
+            btn.addEventListener("click", () => show(btn.dataset.go));
+        });
+        $("logoutBtn").addEventListener("click", logout);
+
+        async function authSubmit(form, path) {
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const body = Object.fromEntries(new FormData(form).entries());
+                try {
+                    const data = await api(path, { method: "POST", body: JSON.stringify(body) });
+                    if (form.id === "loginAdmin" && data.user.rol !== "admin") {
+                        throw new Error("Esta cuenta no es de administrador");
+                    }
+                    setSession(data);
+                } catch (err) {
+                    showMsg(form, err.message, true);
+                }
+            });
+        }
+        authSubmit($("loginPaciente"), "/api/auth/login");
+        authSubmit($("registerPaciente"), "/api/auth/register");
+        authSubmit($("loginAdmin"), "/api/auth/login");
+
+        async function loadHorarios() {
+            const fecha = $("formCita").fecha.value;
+            if (!fecha) return;
+            const slots = await api(`/api/citas/horarios?fecha=${fecha}`);
+            $("formCita").hora.innerHTML = slots.map((s) =>
+                `<option value="${s.hora}" ${s.disponibles === 0 ? "disabled" : ""}>${s.hora} · ${s.disponibles} cupos</option>`
+            ).join("");
+        }
+
+        async function loadPaciente() {
+            const form = $("formCita");
+            if (!form.fecha.value) {
+                const d = new Date();
+                form.fecha.value = d.toISOString().slice(0, 10);
+            }
+            await loadHorarios();
+            await loadMotivos();
+            const citas = await api("/api/citas");
+            $("misCitas").innerHTML = citas.length ? `
+                <table>
+                    <tr><th>Turno</th><th>Fecha</th><th>Espera IA</th><th>Estado</th><th></th></tr>
+                    ${citas.map((c) => `
+                        <tr>
+                            <td><strong>${c.codigo_turno}</strong><br><span class="muted">${c.motivo} · urgencia ${c.urgency}</span></td>
+                            <td>${c.fecha} ${String(c.hora).slice(0,5)}</td>
+                            <td>${c.tiempo_estimado_min} min<br><span class="${c.alerta === "Alta espera" ? "alert-alta" : "alert-ok"}">${c.alerta}</span></td>
+                            <td><span class="chip">${c.estado}</span></td>
+                            <td>${c.estado === "cancelada" || c.estado === "atendida" ? "" : `<button class="btn-danger" data-cancel="${c.id}">Cancelar</button>`}</td>
+                        </tr>`).join("")}
+                </table>` : "<p class='muted'>Aún no tienes citas.</p>";
+            $("misCitas").querySelectorAll("[data-cancel]").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    await api(`/api/citas/${btn.dataset.cancel}`, {
+                        method: "PATCH",
+                        body: JSON.stringify({ estado: "cancelada" }),
+                    });
+                    loadPaciente();
+                });
+            });
+        }
+
+        async function loadMotivos() {
+            const select = $("selectMotivo");
+            if (select.options.length > 1) return;
+            const motivos = await api("/api/motivos");
+            select.innerHTML = `<option value="" disabled selected>Selecciona un motivo</option>` +
+                motivos.map((m) =>
+                    `<option value="${m.motivo}" data-urgency="${m.urgency}">${m.motivo}</option>`
+                ).join("");
+        }
+
+        function mostrarUrgenciaMotivo() {
+            const option = $("selectMotivo").selectedOptions[0];
+            const box = $("urgenciaAsignada");
+            if (!option || !option.dataset.urgency) {
+                box.textContent = "La urgencia se asigna automáticamente según el motivo.";
+                return;
+            }
+            const etiquetas = { 1: "Baja", 2: "Media", 3: "Alta", 4: "Crítica" };
+            box.textContent = `Urgencia asignada: ${option.dataset.urgency} · ${etiquetas[option.dataset.urgency]} (no la elige el paciente).`;
+        }
+
+        $("formCita").fecha.addEventListener("change", loadHorarios);
+        $("selectMotivo").addEventListener("change", mostrarUrgenciaMotivo);
+        $("formCita").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const body = Object.fromEntries(new FormData(form).entries());
+            delete body.urgency;
+            try {
+                const cita = await api("/api/citas", { method: "POST", body: JSON.stringify(body) });
+                showMsg(form, `Turno ${cita.codigo_turno} agendado. Espera estimada: ${cita.tiempo_estimado_min} min (${cita.alerta}).`);
+                loadPaciente();
+            } catch (err) {
+                showMsg(form, err.message, true);
+            }
+        });
+
+        document.querySelectorAll(".tabs button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b === btn));
+                document.querySelectorAll(".tab-panel").forEach((p) => p.classList.add("hidden"));
+                $(`tab-${btn.dataset.tab}`).classList.remove("hidden");
+            });
+        });
+
+        async function loadAdmin() {
+            const [resumen, citas, config, dataset, comparacion] = await Promise.all([
+                api("/api/admin/resumen"),
+                api("/api/citas"),
+                api("/api/config"),
+                api("/api/admin/dataset"),
+                api("/api/admin/comparacion"),
+            ]);
+
+            $("kpis").innerHTML = `
+                <article class="card"><p class="muted">Citas registradas</p><p class="kpi">${resumen.total_citas}</p></article>
+                <article class="card"><p class="muted">Activas</p><p class="kpi">${resumen.citas_activas}</p></article>
+                <article class="card"><p class="muted">Espera promedio IA</p><p class="kpi">${resumen.espera_promedio_ia_min} min</p></article>
+                <article class="card"><p class="muted">Alertas > umbral</p><p class="kpi">${resumen.alertas_alta_espera}</p></article>
+                <article class="card"><p class="muted">Pacientes</p><p class="kpi">${resumen.pacientes_registrados}</p></article>
+                <article class="card"><p class="muted">Por urgencia</p>${Object.entries(resumen.por_urgencia).map(([u, v]) => `<div>Urgencia ${u}: ${v.cantidad} citas · ${v.espera_promedio} min</div>`).join("") || "<p class='muted'>Sin datos</p>"}</article>
+            `;
+
+            $("adminCitas").innerHTML = citas.length ? `
+                <table>
+                    <tr><th>Turno</th><th>Paciente</th><th>Agenda</th><th>Operación</th><th>IA</th><th>Estado</th></tr>
+                    ${citas.map((c) => `
+                        <tr>
+                            <td>${c.codigo_turno}<br><span class="muted">${c.origen}</span></td>
+                            <td>${c.nombre_paciente}<br><span class="muted">${c.motivo || "—"}</span></td>
+                            <td>${c.fecha} ${String(c.hora).slice(0,5)}</td>
+                            <td>Urg ${c.urgency}<br>Enf ${c.nurse_ratio} · Esp ${c.specialists} · Camas ${c.beds}</td>
+                            <td>${c.tiempo_estimado_min} min<br><span class="${c.alerta === "Alta espera" ? "alert-alta" : "alert-ok"}">${c.alerta}</span><br><span class="muted">${c.modelo}</span></td>
+                            <td>
+                                <select data-estado="${c.id}">
+                                    ${["pendiente","confirmada","en_espera","atendida","cancelada"].map((s) => `<option ${s === c.estado ? "selected" : ""}>${s}</option>`).join("")}
+                                </select>
+                            </td>
+                        </tr>`).join("")}
+                </table>` : "<p class='muted'>No hay citas todavía.</p>";
+
+            $("adminCitas").querySelectorAll("[data-estado]").forEach((sel) => {
+                sel.addEventListener("change", async () => {
+                    await api(`/api/citas/${sel.dataset.estado}`, {
+                        method: "PATCH",
+                        body: JSON.stringify({ estado: sel.value }),
+                    });
+                    loadAdmin();
+                });
+            });
+
+            const cfg = $("formConfig");
+            cfg.nurse_ratio.value = config.nurse_ratio;
+            cfg.specialists.value = config.specialists;
+            cfg.beds.value = config.beds;
+            cfg.umbral_alerta_min.value = config.umbral_alerta_min;
+
+            const f = dataset.fuente || {};
+            const m = dataset.metricas_entrenamiento || {};
+            $("datasetCard").innerHTML = `
+                <h2>Identificación del dataset</h2>
+                <p><strong>${f.fuente || "—"}</strong></p>
+                <p class="muted">${f.autor || ""} ${f.url ? `· <a href="${f.url}" target="_blank">fuente</a>` : ""}</p>
+                <p>Archivo CSV: ${dataset.archivo_csv || "no encontrado en /data"}</p>
+                <p>Registros declarados: ${f.registros_aproximados ?? "—"} · leídos: ${dataset.registros_reales ?? "—"}</p>
+                <p>Variable objetivo: ${f.variable_objetivo || "Total Wait Time (min)"}</p>
+                <p>Columnas: ${(dataset.columnas || []).join(", ") || "—"}</p>
+                <p>MAE baseline: ${m.baseline_mae ?? "—"} min · MAE Random Forest: ${m.random_forest_mae ?? "—"} min</p>
+                <p>Modelo: ${m.model_version || "—"} · features: ${(m.features || []).join(", ")}</p>
+                <p class="muted">${dataset.nota_modelo}</p>
+            `;
+
+            const hist = (comparacion.historico_dataset || []).map((h) =>
+                h.error ? `<li>${h.error}</li>` :
+                `<li>${h.categoria}: ${h.registros} casos · media ${h.espera_media_min} min · mediana ${h.espera_mediana_min} min</li>`
+            ).join("") || "<li>Sube el CSV a la carpeta data para ver estadísticas reales.</li>";
+            const pred = (comparacion.predicciones_sistema || []).map((p) =>
+                `<li>Urgencia ${p.urgencia}: ${p.citas} citas · IA ${p.espera_promedio_ia_min} min</li>`
+            ).join("") || "<li>Aún no hay predicciones de citas.</li>";
+            $("comparacionCard").innerHTML = `
+                <h2>Tiempos: IA vs dataset</h2>
+                <p class="muted">${comparacion.interpretacion}</p>
+                <h3>Histórico del CSV</h3>
+                <ul>${hist}</ul>
+                <h3>Predicciones actuales del sistema</h3>
+                <ul>${pred}</ul>
+            `;
+        }
+
+        $("formConfig").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const body = Object.fromEntries(new FormData(e.target).entries());
+            body.nurse_ratio = parseFloat(body.nurse_ratio);
+            body.specialists = parseInt(body.specialists, 10);
+            body.beds = parseInt(body.beds, 10);
+            body.umbral_alerta_min = parseInt(body.umbral_alerta_min, 10);
+            try {
+                await api("/api/admin/config", { method: "PUT", body: JSON.stringify(body) });
+                showMsg(e.target, "Capacidad actualizada.");
+            } catch (err) {
+                showMsg(e.target, err.message, true);
+            }
+        });
+
+        (async () => {
+            if (!state.token) return;
+            try {
+                const user = await api("/api/me");
+                setSession({ token: state.token, user });
+            } catch {
+                logout();
+            }
+        })();
     </script>
 </body>
 </html>

@@ -24,5 +24,28 @@ def test_crear_turno_urgencia_invalida():
     })
     assert response.status_code == 400
 
+
+def test_login_admin_demo():
+    response = client.post("/api/auth/login", json={
+        "email": "admin@clinica.local",
+        "password": "admin123",
+    })
+    assert response.status_code == 200
+    assert response.json()["user"]["rol"] == "admin"
+
+
+def test_register_y_listar_citas():
+    response = client.post("/api/auth/register", json={
+        "nombre": "Prueba",
+        "email": "prueba_citas_" + os.urandom(4).hex() + "@clinica.local",
+        "telefono": "3001112233",
+        "password": "clave123",
+    })
+    assert response.status_code == 200
+    token = response.json()["token"]
+    citas = client.get("/api/citas", headers={"Authorization": f"Bearer {token}"})
+    assert citas.status_code == 200
+    assert citas.json() == []
+
 # Nota: El test de éxito requiere que el servicio IA esté corriendo.
 # Para pruebas unitarias aisladas, se recomienda mockear httpx.
